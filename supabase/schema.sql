@@ -28,3 +28,9 @@ create table if not exists public.student_scores (
 -- เปิด Row Level Security โดยไม่มี policy: เข้าถึงได้เฉพาะผ่าน API ของ Vercel (service role key)
 alter table public.subjects enable row level security;
 alter table public.student_scores enable row level security;
+
+-- ให้สิทธิ์ service_role (ที่ API ใช้) เข้าถึงตาราง
+-- โปรเจกต์ Supabase ใหม่บางตัวไม่ให้สิทธิ์อัตโนมัติ ถ้าไม่รันจะเจอ "permission denied for table"
+grant usage on schema public to service_role;
+grant all on all tables in schema public to service_role;
+grant all on all sequences in schema public to service_role;
