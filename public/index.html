@@ -369,21 +369,20 @@
                         <div class="mb-4">
                             <h4 class="font-bold text-slate-900 dark:text-white text-sm sm:text-base flex items-center gap-2">
                                 <i data-lucide="bar-chart-2" class="w-4 h-4 text-indigo-600 dark:text-indigo-400"></i>
-                                คะแนนของฉัน เทียบค่าเฉลี่ยห้อง
+                                คะแนนแต่ละวิชา เทียบกับเพื่อนในห้อง
                             </h4>
-                            <p class="text-xs text-slate-500 dark:text-slate-400">แท่ง = คะแนนของฉัน · เส้นประ = ค่าเฉลี่ยของทั้งห้อง</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">แท่งสี = คะแนนของฉัน · แท่งเทา = ค่าเฉลี่ยห้อง · เส้นแดง = เกณฑ์ผ่าน 50</p>
                         </div>
-                        <div class="relative h-64 w-full"><canvas id="student-bar-chart"></canvas>
-                            <p id="bar-empty-note" class="hidden absolute top-2 left-1/2 -translate-x-1/2 text-xs text-slate-400 bg-white/80 dark:bg-slate-900/80 px-2 py-0.5 rounded">ยังไม่มีคะแนนของคุณ แสดงเฉพาะค่าเฉลี่ยห้อง</p>
-                        </div>
+                        <p id="bar-empty-note" class="hidden mb-2 text-xs font-medium text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 px-3 py-1.5 rounded-lg">ยังไม่มีคะแนนของคุณ ตอนนี้แสดงเฉพาะค่าเฉลี่ยของห้อง</p>
+                        <div class="relative h-64 w-full"><canvas id="student-bar-chart"></canvas></div>
                     </div>
                     <div class="print-clean lg:col-span-5 bg-white dark:bg-slate-900 rounded-2xl p-5 sm:p-6 border border-slate-200/80 dark:border-slate-800 shadow-sm">
                         <div class="mb-4">
                             <h4 class="font-bold text-slate-900 dark:text-white text-sm sm:text-base flex items-center gap-2">
                                 <i data-lucide="pie-chart" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
-                                สัดส่วนระดับเกรด (A - F)
+                                ได้เกรดอะไรบ้าง
                             </h4>
-                            <p class="text-xs text-slate-500 dark:text-slate-400">การกระจายตัวของเกรดในแต่ละรายวิชา</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">นับจำนวนวิชาในแต่ละเกรด</p>
                         </div>
                         <div class="relative h-64 w-full flex items-center justify-center"><canvas id="student-doughnut-chart"></canvas>
                             <div id="doughnut-empty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-center gap-2">
@@ -1044,53 +1043,124 @@
             if (!window.Chart) return;
             const dark      = isDarkMode();
             const textColor = dark ? '#cbd5e1' : '#334155';
-            const gridColor = dark ? 'rgba(148,163,184,0.12)' : 'rgba(148,163,184,0.25)';
+            const strongText = dark ? '#f8fafc' : '#0f172a';
+            const gridColor = dark ? 'rgba(148,163,184,0.12)' : 'rgba(148,163,184,0.22)';
+            const avgColor  = dark ? 'rgba(148,163,184,0.45)' : 'rgba(100,116,139,0.35)';
 
             if (chartBar)      { chartBar.destroy();      chartBar = null; }
             if (chartDoughnut) { chartDoughnut.destroy(); chartDoughnut = null; }
 
-            // แกน X แสดงทุกวิชา: วิชาที่ยังไม่มีคะแนนจะไม่มีแท่ง แต่ยังเห็นค่าเฉลี่ยห้อง
+            // ทุกวิชาอยู่บนกราฟ: วิชาที่ยังไม่มีคะแนนจะเห็นแค่แท่งค่าเฉลี่ยห้อง
             const names = allSubjects.map(s => s.name);
             rows.forEach(r => { if (!names.includes(r.subject)) names.push(r.subject); });
             const mine = new Map(rows.map(r => [r.subject, Number(r.score)]));
             const myScores = names.map(n => mine.has(n) ? mine.get(n) : null);
-            document.getElementById('bar-empty-note').classList.toggle('hidden', rows.length > 0 || !names.some(n => classStats.subjects[n]));
+            const avgScores = names.map(n => classStats.subjects[n]?.avg ?? null);
+            document.getElementById('bar-empty-note').classList.toggle('hidden', rows.length > 0 || !avgScores.some(v => v !== null));
             document.getElementById('doughnut-empty').classList.toggle('hidden', rows.length > 0);
+
+            // ความสูงกราฟตามจำนวนวิชา ให้แต่ละวิชามีที่พอ
+            const box = document.getElementById('student-bar-chart').parentElement;
+            box.style.height = Math.max(256, names.length * 64 + 60) + 'px';
+
+            // เขียนตัวเลขไว้ปลายแท่ง อ่านได้ทันทีไม่ต้องชี้
+            const valueLabels = {
+                id: 'valueLabels',
+                afterDatasetsDraw(chart) {
+                    const { ctx } = chart;
+                    chart.data.datasets.forEach((ds, di) => {
+                        const meta = chart.getDatasetMeta(di);
+                        if (meta.hidden) return;
+                        meta.data.forEach((bar, i) => {
+                            const v = ds.data[i];
+                            if (v === null || v === undefined) return;
+                            ctx.save();
+                            ctx.font = di === 0 ? "700 13px Prompt, sans-serif" : "500 11px Prompt, sans-serif";
+                            ctx.fillStyle = di === 0 ? strongText : textColor;
+                            ctx.textBaseline = 'middle';
+                            ctx.fillText(di === 0 ? `${v}` : `เฉลี่ย ${Number(v).toFixed(1)}`, bar.x + 6, bar.y);
+                            ctx.restore();
+                        });
+                    });
+                }
+            };
+            // เส้นเกณฑ์ผ่าน 50 คะแนน
+            const passLine = {
+                id: 'passLine',
+                beforeDatasetsDraw(chart) {
+                    const { ctx, chartArea, scales } = chart;
+                    const x = scales.x.getPixelForValue(50);
+                    ctx.save();
+                    ctx.strokeStyle = '#f43f5e'; ctx.setLineDash([4, 4]); ctx.lineWidth = 1.5;
+                    ctx.beginPath(); ctx.moveTo(x, chartArea.top); ctx.lineTo(x, chartArea.bottom); ctx.stroke();
+                    ctx.setLineDash([]); ctx.fillStyle = '#f43f5e'; ctx.font = "600 10px Prompt, sans-serif"; ctx.textAlign = 'center';
+                    ctx.fillText('ผ่าน 50', x, chartArea.top - 6);
+                    ctx.restore();
+                }
+            };
 
             chartBar = new Chart(document.getElementById('student-bar-chart').getContext('2d'), {
                 type: 'bar',
                 data: {
                     labels: names,
                     datasets: [
-                        { label:'คะแนนของฉัน', data: myScores, backgroundColor: myScores.map(v => v === null ? 'transparent' : evaluateGrade(v).hex), borderRadius: 8, maxBarThickness: 46, order: 2 },
-                        { type:'line', label:'ค่าเฉลี่ยห้อง', data: names.map(n => classStats.subjects[n]?.avg ?? null), borderColor: dark ? '#f5f1e6' : '#1e3d2f', backgroundColor: dark ? '#f5f1e6' : '#1e3d2f', borderDash:[6,4], borderWidth:2, pointRadius:4, tension:0.2, order: 1 }
+                        { label:'คะแนนของฉัน', data: myScores, backgroundColor: myScores.map(v => v === null ? 'transparent' : evaluateGrade(v).hex), borderRadius: 6, barPercentage: 0.9, categoryPercentage: 0.8 },
+                        { label:'ค่าเฉลี่ยห้อง', data: avgScores, backgroundColor: avgColor, borderRadius: 6, barPercentage: 0.55, categoryPercentage: 0.8 }
                     ]
                 },
                 options: {
+                    indexAxis: 'y',
                     responsive: true, maintainAspectRatio: false,
-                    plugins: { legend:{ display:true, position:'bottom', labels:{ color:textColor, usePointStyle:true, font:{family:'Prompt',size:11} } }, tooltip:{ callbacks:{ label: ctx => ctx.datasetIndex === 1 ? ` ค่าเฉลี่ยห้อง: ${ctx.parsed.y}` : ` คะแนน: ${ctx.parsed.y}/100 (เกรด ${evaluateGrade(ctx.parsed.y).grade})` } } },
+                    layout: { padding: { top: 14, right: 64 } },
+                    plugins: {
+                        legend: { display: true, position: 'bottom', labels: { color: textColor, usePointStyle: true, pointStyle: 'rectRounded', font: { family: 'Prompt', size: 12 },
+                            generateLabels: () => [
+                                { text: 'คะแนนของฉัน (สีตามเกรด)', fillStyle: '#10b981', strokeStyle: '#10b981', fontColor: textColor, pointStyle: 'rectRounded' },
+                                { text: 'ค่าเฉลี่ยห้อง', fillStyle: avgColor, strokeStyle: avgColor, fontColor: textColor, pointStyle: 'rectRounded' }
+                            ] } },
+                        tooltip: { callbacks: { label: ctx => ctx.datasetIndex === 1 ? ` ค่าเฉลี่ยห้อง: ${Number(ctx.parsed.x).toFixed(1)}` : ` คะแนนของฉัน: ${ctx.parsed.x} (เกรด ${evaluateGrade(ctx.parsed.x).grade})` } }
+                    },
                     scales: {
-                        y: { beginAtZero:true, max:100, ticks:{color:textColor, font:{family:'Prompt',size:11}}, grid:{color:gridColor} },
-                        x: { ticks:{color:textColor, font:{family:'Prompt',size:11}}, grid:{display:false} }
+                        x: { beginAtZero: true, max: 100, ticks: { stepSize: 25, color: textColor, font: { family: 'Prompt', size: 11 } }, grid: { color: gridColor } },
+                        y: { ticks: { color: strongText, font: { family: 'Prompt', size: 13, weight: '600' } }, grid: { display: false } }
                     }
-                }
+                },
+                plugins: [valueLabels, passLine]
             });
 
             const gc = { A:0, B:0, C:0, D:0, F:0 };
             rows.forEach(r => { const g = evaluateGrade(r.score).grade; gc[g]++; });
             const active = Object.keys(gc).filter(g => gc[g] > 0);
             const palette = { A:'#10b981', B:'#3b82f6', C:'#f59e0b', D:'#f97316', F:'#f43f5e' };
+            const passed = rows.filter(r => Number(r.score) >= 50).length;
+
+            // ตรงกลางวงกลมบอกจำนวนวิชาที่ผ่าน
+            const centerText = {
+                id: 'centerText',
+                afterDraw(chart) {
+                    if (!rows.length) return;
+                    const { ctx, chartArea } = chart;
+                    const cx = (chartArea.left + chartArea.right) / 2, cy = (chartArea.top + chartArea.bottom) / 2;
+                    ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                    ctx.fillStyle = strongText; ctx.font = "700 28px Prompt, sans-serif";
+                    ctx.fillText(`${passed}/${rows.length}`, cx, cy - 8);
+                    ctx.fillStyle = textColor; ctx.font = "500 12px Prompt, sans-serif";
+                    ctx.fillText('วิชาที่ผ่าน', cx, cy + 16);
+                    ctx.restore();
+                }
+            };
 
             chartDoughnut = new Chart(document.getElementById('student-doughnut-chart').getContext('2d'), {
                 type: 'doughnut',
                 data: {
-                    labels: active.map(g=>`เกรด ${g}`),
-                    datasets: [{ data: active.map(g=>gc[g]), backgroundColor: active.map(g=>palette[g]), borderWidth:2, borderColor: dark?'#0f172a':'#ffffff' }]
+                    labels: active.map(g => `เกรด ${g}: ${gc[g]} วิชา`),
+                    datasets: [{ data: active.map(g=>gc[g]), backgroundColor: active.map(g=>palette[g]), borderWidth:3, borderColor: dark?'#0f172a':'#ffffff' }]
                 },
                 options: {
-                    responsive: true, maintainAspectRatio: false, cutout:'62%',
-                    plugins: { legend:{ position:'bottom', labels:{ color:textColor, padding:14, usePointStyle:true, font:{family:'Prompt',size:12} } }, tooltip:{ callbacks:{ label: ctx=>` ${ctx.label}: ${ctx.parsed} วิชา` } } }
-                }
+                    responsive: true, maintainAspectRatio: false, cutout:'68%',
+                    plugins: { legend:{ position:'bottom', labels:{ color:textColor, padding:14, usePointStyle:true, font:{family:'Prompt',size:13} } }, tooltip:{ callbacks:{ label: ctx=>` ${ctx.label}` } } }
+                },
+                plugins: [centerText]
             });
         }
 
