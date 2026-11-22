@@ -686,6 +686,21 @@
         </div>
     </div>
 
+    <!-- Subject Rename / Delete Modal -->
+    <div id="modal-subject" class="no-print fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+        <form onsubmit="confirmSubjectModal(event)" class="bg-white dark:bg-slate-900 rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 animate-fade-in">
+            <h3 id="modal-subject-title" class="text-lg font-bold text-slate-900 dark:text-white">แก้ชื่อวิชา</h3>
+            <p id="modal-subject-text" class="text-sm text-slate-500 dark:text-slate-400 mt-1.5"></p>
+            <input type="text" id="modal-subject-input" maxlength="100"
+                class="mt-4 w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+            <p id="modal-subject-error" class="hidden mt-2 text-xs text-rose-600 dark:text-rose-400"></p>
+            <div class="grid grid-cols-2 gap-2.5 mt-6">
+                <button type="button" onclick="closeSubjectModal()" class="py-2.5 px-4 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-sm font-semibold transition cursor-pointer">ยกเลิก</button>
+                <button type="submit" id="btn-modal-subject-ok" class="py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold shadow-sm transition cursor-pointer">บันทึก</button>
+            </div>
+        </form>
+    </div>
+
     <!-- ========================================== -->
     <!-- APPLICATION JAVASCRIPT                     -->
     <!-- ========================================== -->
@@ -1407,9 +1422,9 @@
                 <li class="flex items-center gap-2 px-3 py-2 text-sm">
                     <span class="w-6 text-xs font-bold text-slate-400">${i + 1}.</span>
                     <span class="flex-1 min-w-0 truncate text-slate-800 dark:text-slate-200">${escapeHtml(s.name)}</span>
-                    <button type="button" onclick="renameSubject('${s.id}')" aria-label="แก้ชื่อวิชา"
+                    <button type="button" onclick="openSubjectModal('rename', '${s.id}')" aria-label="แก้ชื่อวิชา"
                         class="p-1.5 rounded-lg text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/60 cursor-pointer"><i data-lucide="pencil" class="w-3.5 h-3.5"></i></button>
-                    <button type="button" onclick="deleteSubject('${s.id}')" aria-label="ลบวิชา"
+                    <button type="button" onclick="openSubjectModal('delete', '${s.id}')" aria-label="ลบวิชา"
                         class="p-1.5 rounded-lg text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/60 cursor-pointer"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
                 </li>`).join('');
             refreshIcons();
@@ -1443,31 +1458,71 @@
             }
         }
 
-        async function renameSubject(id) {
+        // หน้าต่างแก้ชื่อ / ลบวิชา (ใช้แทน prompt / confirm ของเบราว์เซอร์)
+        let subjectModal = { mode: null, id: null };
+
+        function openSubjectModal(mode, id) {
             const subj = allSubjects.find(s => String(s.id) === String(id));
             if (!subj) return;
-            const name = (prompt('ชื่อวิชาใหม่', subj.name) || '').trim();
-            if (!name || name === subj.name) return;
-            try {
-                await subjectRequest('PUT', { id, name });
-                await loadAllAdminData();
-                showToast(`เปลี่ยนชื่อวิชาเป็น "${name}" แล้ว`, 'success');
-            } catch (err) {
-                showToast(err.message, 'error');
+            subjectModal = { mode, id };
+            const input = document.getElementById('modal-subject-input');
+            const okBtn = document.getElementById('btn-modal-subject-ok');
+            document.getElementById('modal-subject-error').classList.add('hidden');
+            if (mode === 'rename') {
+                document.getElementById('modal-subject-title').textContent = 'แก้ชื่อวิชา';
+                document.getElementById('modal-subject-text').textContent = 'คะแนนเดิมของวิชานี้จะเปลี่ยนชื่อตาม';
+                input.classList.remove('hidden');
+                input.value = subj.name;
+                okBtn.textContent = 'บันทึก';
+                okBtn.className = 'py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold shadow-sm transition cursor-pointer';
+            } else {
+                const count = allRecords.filter(r => r.subject === subj.name).length;
+                document.getElementById('modal-subject-title').textContent = `ลบวิชา "${subj.name}"?`;
+                document.getElementById('modal-subject-text').textContent = `คะแนนของวิชานี้ ${count} รายการจะถูกลบด้วย และย้อนกลับไม่ได้`;
+                input.classList.add('hidden');
+                okBtn.textContent = 'ยืนยันการลบ';
+                okBtn.className = 'py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold shadow-sm transition cursor-pointer';
             }
+            const modal = document.getElementById('modal-subject');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            if (mode === 'rename') { input.focus(); input.select(); }
         }
 
-        async function deleteSubject(id) {
+        function closeSubjectModal() {
+            subjectModal = { mode: null, id: null };
+            const modal = document.getElementById('modal-subject');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        async function confirmSubjectModal(e) {
+            e.preventDefault();
+            const { mode, id } = subjectModal;
             const subj = allSubjects.find(s => String(s.id) === String(id));
-            if (!subj) return;
-            const count = allRecords.filter(r => r.subject === subj.name).length;
-            if (!confirm(`ลบวิชา "${subj.name}" และคะแนนของวิชานี้ทั้งหมด ${count} รายการ?\nการดำเนินการนี้ย้อนกลับไม่ได้`)) return;
+            if (!subj) { closeSubjectModal(); return; }
+            const errEl = document.getElementById('modal-subject-error');
+            const okBtn = document.getElementById('btn-modal-subject-ok');
+            okBtn.disabled = true;
             try {
-                await subjectRequest('DELETE', null, `?id=${encodeURIComponent(id)}`);
+                if (mode === 'rename') {
+                    const name = document.getElementById('modal-subject-input').value.trim();
+                    if (!name) { errEl.textContent = 'กรุณากรอกชื่อวิชา'; errEl.classList.remove('hidden'); return; }
+                    if (name !== subj.name) {
+                        await subjectRequest('PUT', { id, name });
+                        showToast(`เปลี่ยนชื่อวิชาเป็น "${name}" แล้ว`, 'success');
+                    }
+                } else {
+                    await subjectRequest('DELETE', null, `?id=${encodeURIComponent(id)}`);
+                    showToast(`ลบวิชา "${subj.name}" แล้ว`, 'success');
+                }
+                closeSubjectModal();
                 await loadAllAdminData();
-                showToast(`ลบวิชา "${subj.name}" แล้ว`, 'success');
             } catch (err) {
-                showToast(err.message, 'error');
+                errEl.textContent = err.message;
+                errEl.classList.remove('hidden');
+            } finally {
+                okBtn.disabled = false;
             }
         }
 
