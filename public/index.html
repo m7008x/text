@@ -14,7 +14,10 @@
                 extend: {
                     fontFamily: { sans: ['Prompt', 'Inter', 'sans-serif'] },
                     colors: {
-                        brand: { 50: '#eef2ff', 100: '#e0e7ff', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca' }
+                        // สีประจำระบบ: เขียวกระดานดำ + ทองชอล์ก (แทนสีม่วงเดิมทั้งหน้า)
+                        indigo: { 50:'#effaf4', 100:'#d8f2e3', 200:'#b3e4ca', 300:'#80cfa8', 400:'#4cb383', 500:'#2a9566', 600:'#1d7a52', 700:'#186244', 800:'#164e38', 900:'#13402f', 950:'#0a241a' },
+                        violet: { 600:'#c08a1e' },
+                        board:  { DEFAULT:'#1e3d2f', dark:'#152b21', frame:'#8a5a2b', chalk:'#f5f1e6', gold:'#f2c14e' }
                     }
                 }
             }
@@ -24,7 +27,7 @@
     <!-- Google Fonts: Prompt & Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Prompt:wght@300;400;500;600;700&family=Mali:wght@500;600;700&display=swap" rel="stylesheet">
 
     <!-- Lucide Icons CDN -->
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -47,6 +50,23 @@
 
     <style>
         body { font-family: 'Prompt', 'Inter', sans-serif; }
+        /* หัวข้อเป็นลายมือ ให้เหมือนเขียนบนกระดาน */
+        h1, h2, h3, h4, .font-chalk { font-family: 'Mali', 'Prompt', sans-serif; }
+        .chalkboard {
+            background-color: #1e3d2f;
+            background-image:
+                radial-gradient(ellipse at 20% 15%, rgba(255,255,255,0.07), transparent 45%),
+                radial-gradient(ellipse at 85% 80%, rgba(255,255,255,0.05), transparent 40%),
+                repeating-linear-gradient(115deg, rgba(255,255,255,0.015) 0 2px, transparent 2px 7px);
+            border: 10px solid #8a5a2b;
+            box-shadow: inset 0 0 40px rgba(0,0,0,0.45), 0 10px 24px -12px rgba(0,0,0,0.5);
+        }
+        .chalk-text { color: #f5f1e6; text-shadow: 0 0 1px rgba(245,241,230,0.6); }
+        .chalk-line { border-bottom: 2px dashed rgba(245,241,230,0.35); }
+        .chalk-input { background: transparent; border: 2px solid rgba(245,241,230,0.75); color: #f5f1e6; border-radius: 10px; }
+        .chalk-input::placeholder { color: rgba(245,241,230,0.45); }
+        .chalk-input:focus { outline: none; border-color: #f2c14e; box-shadow: 0 0 0 3px rgba(242,193,78,0.25); }
+        .chalk-tray { height: 10px; background: #6d4521; border-radius: 0 0 6px 6px; margin: 0 24px; box-shadow: 0 3px 0 #5a381b; }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(8px); }
             to   { opacity: 1; transform: translateY(0); }
@@ -86,8 +106,8 @@
                             <i data-lucide="graduation-cap" class="w-5 h-5"></i>
                         </div>
                         <div>
-                            <h1 class="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-tight">ระบบตรวจสอบผลการเรียน</h1>
-                            <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Student Score Dashboard &amp; Admin Portal</p>
+                            <h1 class="text-lg sm:text-xl font-bold text-slate-900 dark:text-white leading-tight">กระดานคะแนน</h1>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">ระบบตรวจสอบผลการเรียน · รหัส 68319030001–020</p>
                         </div>
                     </div>
                     <!-- Mobile Theme Toggle -->
@@ -141,42 +161,33 @@
         <!-- ========================================================= -->
         <section id="view-student" class="animate-fade-in space-y-6">
 
-            <!-- Search Hero Card -->
-            <div class="no-print bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800 p-5 sm:p-8 max-w-4xl mx-auto transition-colors">
-                <div class="text-center mb-6">
-                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/80 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/60 mb-2.5">
-                        <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Student Academic Portal
-                    </span>
-                    <h2 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">ค้นหาแดชบอร์ดผลการเรียนรายบุคคล</h2>
-                    <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">กรอกรหัสนักเรียนของคุณเพื่อดูกราฟวิเคราะห์คะแนน เกรดเฉลี่ย และผลการประเมินรายวิชา</p>
-                </div>
+            <!-- Search Hero: กระดานดำ เหมือนภาพร่างบนกระดานในห้องเรียน -->
+            <div class="no-print max-w-4xl mx-auto">
+                <div class="chalkboard rounded-2xl p-6 sm:p-10">
+                    <p class="font-chalk chalk-text text-sm opacity-80 text-center">กระดานคะแนน</p>
+                    <h2 class="chalk-text text-2xl sm:text-3xl font-bold text-center mt-1">ดูคะแนนของฉัน</h2>
 
-                <!-- Search Form -->
-                <form id="student-search-form" onsubmit="handleStudentSearch(event)" class="flex flex-col sm:flex-row gap-3 max-w-2xl mx-auto">
-                    <div class="relative flex-1">
-                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                    <form id="student-search-form" onsubmit="handleStudentSearch(event)" class="mt-6 flex flex-col sm:flex-row sm:items-center gap-3 max-w-2xl mx-auto">
+                        <label for="search-student-id" class="font-chalk chalk-text text-2xl sm:text-3xl font-bold shrink-0 text-center">ID STD</label>
+                        <input type="text" id="search-student-id" placeholder="683190300xx" required inputmode="numeric" maxlength="11" autocomplete="off"
+                            class="chalk-input font-chalk flex-1 min-w-0 px-4 py-3 text-xl sm:text-2xl tracking-widest text-center">
+                        <button type="submit"
+                            class="px-6 py-3 rounded-xl bg-board-gold hover:brightness-105 active:scale-[0.98] text-board-dark font-bold shadow-md transition flex items-center justify-center gap-2 cursor-pointer shrink-0">
                             <i data-lucide="search" class="w-4 h-4"></i>
-                        </div>
-                        <input type="text" id="search-student-id" placeholder="กรอกรหัสนักเรียน เช่น 68319030001" required inputmode="numeric" maxlength="11"
-                            class="w-full pl-11 pr-4 py-3.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/80 focus:bg-white dark:focus:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-900 dark:text-white font-medium transition">
-                    </div>
-                    <button type="submit"
-                        class="px-6 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white font-semibold shadow-md shadow-indigo-500/20 transition flex items-center justify-center gap-2 cursor-pointer shrink-0">
-                        <i data-lucide="search" class="w-4 h-4"></i>
-                        <span>ค้นหาคะแนน</span>
-                    </button>
-                </form>
+                            <span>ดูคะแนน</span>
+                        </button>
+                    </form>
 
-                <!-- Quick ID Picker -->
-                <div class="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-center gap-2">
-                    <label for="quick-student-select" class="text-xs text-slate-500 dark:text-slate-400 font-medium inline-flex items-center gap-1">
-                        <i data-lucide="zap" class="w-3.5 h-3.5 text-amber-500"></i> เลือกรหัสนักเรียน:
-                    </label>
-                    <select id="quick-student-select" onchange="if(this.value) quickSearchStudent(this.value)"
-                        class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 border border-indigo-200/70 dark:border-indigo-800/70 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                        <option value="">-- 68319030001 ถึง 68319030020 --</option>
-                    </select>
+                    <div class="mt-6 pt-4 chalk-line"></div>
+                    <div class="mt-4 flex flex-wrap items-center justify-center gap-2">
+                        <label for="quick-student-select" class="font-chalk chalk-text text-sm opacity-90">หรือเลือกรหัส:</label>
+                        <select id="quick-student-select" onchange="if(this.value) quickSearchStudent(this.value)"
+                            class="chalk-input font-chalk px-3 py-1.5 text-sm cursor-pointer [&>option]:text-slate-900">
+                            <option value="">68319030001 – 68319030020</option>
+                        </select>
+                    </div>
                 </div>
+                <div class="chalk-tray"></div>
             </div>
 
             <!-- Welcome Info Cards (before search) -->
@@ -202,11 +213,11 @@
                     </div>
                     <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-sm flex items-center gap-4">
                         <div class="w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-950/80 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-                            <i data-lucide="database" class="w-6 h-6"></i>
+                            <i data-lucide="users" class="w-6 h-6"></i>
                         </div>
                         <div>
-                            <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">ฐานข้อมูลเรียลไทม์</p>
-                            <p class="text-sm font-bold text-slate-900 dark:text-white mt-0.5">Vercel + Supabase API</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">รู้อันดับในห้อง</p>
+                            <p class="text-sm font-bold text-slate-900 dark:text-white mt-0.5">เทียบกับค่าเฉลี่ยของห้อง</p>
                         </div>
                     </div>
                 </div>
@@ -283,6 +294,7 @@
                                         รายงานผลการเรียนส่วนบุคคล
                                     </span>
                                     <span id="res-status-badge" class="px-2.5 py-1 rounded-lg text-xs font-bold border">สถานะ: -</span>
+                                    <span id="res-rank-badge" class="hidden px-2.5 py-1 rounded-lg text-xs font-bold border bg-amber-50 dark:bg-amber-950/70 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800"></span>
                                 </div>
                                 <h3 class="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mt-2">
                                     รหัสนักเรียน: <span id="res-student-id" class="text-indigo-600 dark:text-indigo-400">-</span>
@@ -357,9 +369,9 @@
                         <div class="mb-4">
                             <h4 class="font-bold text-slate-900 dark:text-white text-sm sm:text-base flex items-center gap-2">
                                 <i data-lucide="bar-chart-2" class="w-4 h-4 text-indigo-600 dark:text-indigo-400"></i>
-                                กราฟเปรียบเทียบคะแนนรายวิชา
+                                คะแนนของฉัน เทียบค่าเฉลี่ยห้อง
                             </h4>
-                            <p class="text-xs text-slate-500 dark:text-slate-400">แสดงคะแนนสอบแต่ละวิชาเทียบกับคะแนนเต็ม 100</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">แท่ง = คะแนนของฉัน · เส้นประ = ค่าเฉลี่ยของทั้งห้อง</p>
                         </div>
                         <div class="relative h-64 w-full"><canvas id="student-bar-chart"></canvas></div>
                     </div>
@@ -655,6 +667,31 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Bulk Entry: กรอกคะแนนทั้งห้องในครั้งเดียว -->
+                <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800 p-5 sm:p-6">
+                    <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pb-4 mb-4 border-b border-slate-100 dark:border-slate-800">
+                        <div>
+                            <h3 class="font-bold text-slate-900 dark:text-white flex items-center gap-2 text-base">
+                                <i data-lucide="table-2" class="w-4 h-4 text-indigo-600 dark:text-indigo-400"></i>
+                                กรอกคะแนนทั้งห้อง
+                            </h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">เลือกวิชา แล้วกรอกคะแนนของทั้ง 20 คนในหน้าเดียว ช่องที่เว้นว่างจะไม่ถูกเปลี่ยน</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <select id="bulk-subject" onchange="renderBulkGrid()"
+                                class="px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <option value="">-- เลือกวิชา --</option>
+                            </select>
+                            <button type="button" id="btn-bulk-save" onclick="saveBulkScores()"
+                                class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-sm transition inline-flex items-center gap-1.5 cursor-pointer">
+                                <i data-lucide="save" class="w-4 h-4"></i> บันทึกทั้งห้อง
+                            </button>
+                        </div>
+                    </div>
+                    <div id="bulk-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5"></div>
+                    <p id="bulk-empty" class="text-sm text-slate-400 text-center py-6">เลือกวิชาด้านบนเพื่อเริ่มกรอกคะแนน</p>
+                </div>
             </div>
         </section>
     </main>
@@ -662,7 +699,7 @@
     <!-- Footer -->
     <footer class="no-print bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-4 mt-10 transition-colors">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-400">
-            <p>© 2026 ระบบจัดการและตรวจสอบผลการเรียน (Student Score Dashboard)</p>
+            <p class="font-chalk">© 2026 กระดานคะแนน · ระบบตรวจสอบผลการเรียน</p>
             <p>รหัสนักเรียน 68319030001 - 68319030020 · Vercel + Supabase</p>
         </div>
     </footer>
@@ -717,6 +754,7 @@
         let lastSearchedId = '';
         let lastStudentRows = [];
         let allSubjects = [];
+        let classStats = { subjects: {}, rank: null, ranked: 0 };
 
         // รหัสนักเรียนที่ใช้ได้: 68319030001 - 68319030020
         const STUDENT_IDS = Array.from({ length: 20 }, (_, i) => String(68319030001 + i));
@@ -858,10 +896,12 @@
             }
 
             try {
-                const [res] = await Promise.all([
+                const [res, statsRes] = await Promise.all([
                     fetch(`/api/scores?student_id=${encodeURIComponent(cleanId)}`),
+                    fetch(`/api/scores?stats=1&student_id=${encodeURIComponent(cleanId)}`),
                     loadSubjects()
                 ]);
+                classStats = statsRes.ok ? await statsRes.json() : { subjects: {}, rank: null, ranked: 0 };
                 const json = await res.json();
                 if (!res.ok) throw new Error(json.error);
                 const rows = json.data || [];
@@ -891,6 +931,15 @@
 
             const badge = document.getElementById('res-status-badge');
             const gradeEl = document.getElementById('kpi-overall-grade');
+
+            const rankEl = document.getElementById('res-rank-badge');
+            if (rows.length && classStats.rank) {
+                const medal = classStats.rank <= 3 ? ['🥇','🥈','🥉'][classStats.rank - 1] + ' ' : '';
+                rankEl.textContent = `${medal}อันดับ ${classStats.rank} จาก ${classStats.ranked} คน`;
+                rankEl.classList.remove('hidden');
+            } else {
+                rankEl.classList.add('hidden');
+            }
 
             if (!rows.length) {
                 badge.className  = 'px-2.5 py-1 rounded-lg text-xs font-bold border bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700';
@@ -952,6 +1001,13 @@
                 }
                 const s = Math.min(100, Math.max(0, Number(item.score)));
                 const e = evaluateGrade(s);
+                const cs = classStats.subjects[name];
+                const diff = cs ? Math.round((s - cs.avg) * 10) / 10 : null;
+                const diffHtml = cs ? `
+                        <div class="mt-2 flex items-center justify-between text-[11px]">
+                            <span class="text-slate-500 dark:text-slate-400">ค่าเฉลี่ยห้อง ${cs.avg.toFixed(1)} (${cs.count} คน)</span>
+                            <span class="font-bold ${diff >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}">${diff >= 0 ? '▲ สูงกว่า' : '▼ ต่ำกว่า'}ค่าเฉลี่ย ${Math.abs(diff)}</span>
+                        </div>` : '';
                 const passClass = e.passed
                     ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/70'
                     : 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/70';
@@ -966,9 +1022,10 @@
                                 <p class="text-sm font-bold ${e.textColor} mt-1">${s} <span class="text-[11px] font-normal text-slate-400">คะแนน</span></p>
                             </div>
                         </div>
-                        <div class="w-full h-2.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+ <div class="relative w-full h-2.5 bg-slate-200 dark:bg-slate-700 rounded-full">
                             <div class="h-full ${e.barColor} rounded-full transition-all duration-500" style="width:${s}%"></div>
-                        </div>
+                            ${cs ? `<span title="ค่าเฉลี่ยห้อง" class="absolute -top-1 h-4.5 w-1 rounded bg-slate-800 dark:bg-white" style="left:calc(${cs.avg}% - 2px);height:18px"></span>` : ''}
+                        </div>${diffHtml}
                     </div>`;
             }).join('') || '<p class="text-sm text-slate-400">ยังไม่มีรายวิชาในระบบ</p>';
 
@@ -989,11 +1046,14 @@
                 type: 'bar',
                 data: {
                     labels: rows.map(r => r.subject),
-                    datasets: [{ label:'คะแนน', data: rows.map(r=>Number(r.score)), backgroundColor: rows.map(r=>evaluateGrade(r.score).hex), borderRadius: 8, maxBarThickness: 46 }]
+                    datasets: [
+                        { label:'คะแนน', data: rows.map(r=>Number(r.score)), backgroundColor: rows.map(r=>evaluateGrade(r.score).hex), borderRadius: 8, maxBarThickness: 46, order: 2 },
+                        { type:'line', label:'ค่าเฉลี่ยห้อง', data: rows.map(r => classStats.subjects[r.subject]?.avg ?? null), borderColor: dark ? '#f5f1e6' : '#1e3d2f', backgroundColor: dark ? '#f5f1e6' : '#1e3d2f', borderDash:[6,4], borderWidth:2, pointRadius:4, tension:0.2, order: 1 }
+                    ]
                 },
                 options: {
                     responsive: true, maintainAspectRatio: false,
-                    plugins: { legend:{display:false}, tooltip:{ callbacks:{ label: ctx => ` คะแนน: ${ctx.parsed.y}/100 (เกรด ${evaluateGrade(ctx.parsed.y).grade})` } } },
+                    plugins: { legend:{ display:true, position:'bottom', labels:{ color:textColor, usePointStyle:true, font:{family:'Prompt',size:11} } }, tooltip:{ callbacks:{ label: ctx => ctx.datasetIndex === 1 ? ` ค่าเฉลี่ยห้อง: ${ctx.parsed.y}` : ` คะแนน: ${ctx.parsed.y}/100 (เกรด ${evaluateGrade(ctx.parsed.y).grade})` } } },
                     scales: {
                         y: { beginAtZero:true, max:100, ticks:{color:textColor, font:{family:'Prompt',size:11}}, grid:{color:gridColor} },
                         x: { ticks:{color:textColor, font:{family:'Prompt',size:11}}, grid:{display:false} }
@@ -1096,6 +1156,7 @@
                 const json = await res.json();
                 allRecords = json.data || [];
                 await loadSubjects();
+                renderBulkGrid();
                 populateAdminFilterDropdowns();
                 applyAdminFilters();
             } catch {
@@ -1404,7 +1465,67 @@
             renderSubjectList();
         }
 
+        // ==========================================
+        // BULK ENTRY (กรอกคะแนนทั้งห้อง)
+        // ==========================================
+        function fillBulkSubjectSelect() {
+            const sel = document.getElementById('bulk-subject');
+            if (!sel) return;
+            const cur = sel.value;
+            sel.innerHTML = '<option value="">-- เลือกวิชา --</option>' +
+                allSubjects.map(s => `<option value="${escapeHtml(s.name)}">${escapeHtml(s.name)}</option>`).join('');
+            if ([...sel.options].some(o => o.value === cur)) sel.value = cur;
+            renderBulkGrid();
+        }
+
+        function renderBulkGrid() {
+            const sel = document.getElementById('bulk-subject');
+            if (!sel) return;
+            const subject = sel.value;
+            const grid = document.getElementById('bulk-grid');
+            document.getElementById('bulk-empty').classList.toggle('hidden', !!subject);
+            if (!subject) { grid.innerHTML = ''; return; }
+            const current = new Map(allRecords.filter(r => r.subject === subject).map(r => [r.student_id, r.score]));
+            grid.innerHTML = STUDENT_IDS.map((id, i) => {
+                const v = current.has(id) ? Number(current.get(id)) : '';
+                return `
+                <label class="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
+                    <span class="w-5 text-[11px] font-bold text-slate-400">${i + 1}</span>
+                    <span class="flex-1 text-xs font-semibold text-slate-700 dark:text-slate-200 tabular-nums">${id}</span>
+                    <input type="number" min="0" max="100" step="any" data-sid="${id}" value="${v}" placeholder="-"
+                        class="bulk-input w-20 px-2 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white text-sm text-right focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </label>`;
+            }).join('');
+        }
+
+        async function saveBulkScores() {
+            const subject = document.getElementById('bulk-subject').value;
+            if (!subject) { showToast('กรุณาเลือกวิชาก่อน', 'error'); return; }
+            const items = [...document.querySelectorAll('.bulk-input')].map(el => ({ student_id: el.dataset.sid, score: el.value.trim() }));
+            const bad = items.find(it => it.score !== '' && (isNaN(Number(it.score)) || Number(it.score) < 0 || Number(it.score) > 100));
+            if (bad) { showToast(`คะแนนของ ${bad.student_id} ต้องอยู่ระหว่าง 0 - 100`, 'error'); return; }
+            const btn = document.getElementById('btn-bulk-save');
+            btn.disabled = true; btn.classList.add('opacity-70');
+            try {
+                const res = await fetch('/api/scores?bulk=1', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminToken}` },
+                    body: JSON.stringify({ subject, items })
+                });
+                if (res.status === 401 || res.status === 403) { handleAdminLogout(); return; }
+                const json = await res.json();
+                if (!res.ok) throw new Error(json.error || 'บันทึกไม่สำเร็จ');
+                await loadAllAdminData();
+                showToast(`บันทึกวิชา "${subject}" แล้ว: เพิ่ม ${json.inserted} · แก้ไข ${json.updated} รายการ`, 'success');
+            } catch (err) {
+                showToast('เกิดข้อผิดพลาด: ' + err.message, 'error');
+            } finally {
+                btn.disabled = false; btn.classList.remove('opacity-70');
+            }
+        }
+
         function fillSubjectSelect() {
+            fillBulkSubjectSelect();
             const sel = document.getElementById('input-subject');
             const cur = sel.value;
             sel.innerHTML = '<option value="">-- เลือกวิชา (เพิ่มวิชาได้ด้านล่าง) --</option>' +

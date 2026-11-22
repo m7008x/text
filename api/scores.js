@@ -29,6 +29,27 @@ async function syncStudentPic(supabase, student_id, pic) {
   await supabase.from('student_scores').update({ pic }).eq('student_id', student_id);
 }
 
+// สรุปค่าเฉลี่ยรายวิชาของทั้งห้อง และอันดับจากคะแนนเฉลี่ยของแต่ละคน
+function buildStats(rows, studentId) {
+  const bySubject = {};
+  const byStudent = {};
+  for (const r of rows) {
+    const n = Number(r.score);
+    (bySubject[r.subject] = bySubject[r.subject] || []).push(n);
+    (byStudent[r.student_id] = byStudent[r.student_id] || []).push(n);
+  }
+  const avg = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
+  const subjects = {};
+  for (const [name, arr] of Object.entries(bySubject)) {
+    subjects[name] = { avg: Math.round(avg(arr) * 100) / 100, count: arr.length, max: Math.max(...arr) };
+  }
+  const ranking = Object.entries(byStudent).map(([sid, arr]) => ({ sid, avg: avg(arr) })).sort((a, b) => b.avg - a.avg);
+  let rank = null;
+  const me = ranking.find(r => r.sid === studentId);
+  if (me) rank = ranking.filter(r => r.avg > me.avg).length + 1;
+  return { subjects, rank, ranked: ranking.length };
+}
+
 module.exports = async function handler(req, res) {
   try {
     const supabase = getSupabase();
@@ -38,6 +59,14 @@ module.exports = async function handler(req, res) {
       const { error } = await supabase.from('student_scores').select('id').limit(1);
       if (error) return res.status(500).json({ connected: false, error: error.message });
       return res.status(200).json({ connected: true });
+    }
+
+    // GET ?stats=1&student_id=...: ค่าเฉลี่ยของห้องรายวิชา และอันดับของนักเรียนคนนี้
+    // (ส่งกลับเฉพาะตัวเลขสรุป ไม่เปิดเผยคะแนนของคนอื่น)
+    if (req.method === 'GET' && req.query.stats === '1') {
+      const { data, error } = await supabase.from('student_scores').select('student_id, subject, score');
+      if (error) return res.status(500).json({ error: error.message });
+      return res.status(200).json(buildStats(data || [], (req.query.student_id || '').trim()));
     }
 
     // GET: ค้นหารายบุคคล (สำหรับนักเรียน) หรือดึงทั้งหมด (เฉพาะ Admin)
@@ -74,6 +103,47 @@ module.exports = async function handler(req, res) {
     // ตั้งแต่ตรงนี้ (Insert / Edit / Delete) ต้องเป็น Admin
     if (!verifyToken(req.headers.authorization)) {
       return res.status(401).json({ error: 'กรุณาเข้าสู่ระบบ Admin ก่อนทำรายการ' });
+    }
+
+    // POST ?bulk=1: กรอกคะแนนวิชาเดียวให้หลายคนพร้อมกัน { subject, items: [{ student_id, score }] }
+    // ช่องที่เว้นว่างจะไม่ถูกแตะ คนที่มีคะแนนแล้วจะถูกแก้ คนที่ยังไม่มีจะถูกเพิ่ม
+    if (req.method === 'POST' && req.query.bulk === '1') {
+      const subject = String((req.body || {}).subject || '').trim();
+      const items = Array.isArray((req.body || {}).items) ? req.body.items : [];
+      const { data: subj } = await supabase.from('subjects').select('id').eq('name', subject).limit(1);
+      if (!subj || !subj.length) return res.status(400).json({ error: `ไม่พบวิชา "${subject}"` });
+
+      const clean = [];
+      for (const it of items) {
+        if (it.score === '' || it.score === null || it.score === undefined) continue;
+        const sid = String(it.student_id || '').trim();
+        const score = Number(it.score);
+        if (!isValidStudentId(sid)) return res.status(400).json({ error: ID_RANGE_MSG });
+        if (isNaN(score) || score < 0 || score > 100) return res.status(400).json({ error: `คะแนนของ ${sid} ต้องอยู่ระหว่าง 0 - 100` });
+        clean.push({ student_id: sid, score });
+      }
+
+      const { data: existing, error: exErr } = await supabase
+        .from('student_scores').select('id, student_id').eq('subject', subject);
+      if (exErr) return res.status(500).json({ error: exErr.message });
+      const byStudent = new Map((existing || []).map(r => [r.student_id, r.id]));
+
+      let inserted = 0, updated = 0;
+      for (const it of clean) {
+        if (byStudent.has(it.student_id)) {
+          const { error } = await supabase.from('student_scores').update({ score: it.score }).eq('id', byStudent.get(it.student_id));
+          if (error) return res.status(500).json({ error: error.message });
+          updated++;
+        } else {
+          const { data: picRow } = await supabase
+            .from('student_scores').select('pic').eq('student_id', it.student_id).not('pic', 'is', null).limit(1);
+          const pic = picRow && picRow.length ? picRow[0].pic : null;
+          const { error } = await supabase.from('student_scores').insert([{ student_id: it.student_id, subject, score: it.score, pic }]);
+          if (error) return res.status(500).json({ error: error.message });
+          inserted++;
+        }
+      }
+      return res.status(200).json({ ok: true, inserted, updated });
     }
 
     // POST: เพิ่มคะแนน (Insert)
