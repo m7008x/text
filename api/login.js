@@ -1,6 +1,5 @@
 const crypto = require('crypto');
-
-const SECRET = process.env.ADMIN_SECRET || 'vercel-supabase-secret-key-2026';
+const { SECRET } = require('./_lib');
 
 function createToken(username) {
   const payload = Buffer.from(JSON.stringify({ user: username, exp: Date.now() + 86400000 })).toString('base64url');
