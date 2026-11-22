@@ -373,7 +373,9 @@
                             </h4>
                             <p class="text-xs text-slate-500 dark:text-slate-400">แท่ง = คะแนนของฉัน · เส้นประ = ค่าเฉลี่ยของทั้งห้อง</p>
                         </div>
-                        <div class="relative h-64 w-full"><canvas id="student-bar-chart"></canvas></div>
+                        <div class="relative h-64 w-full"><canvas id="student-bar-chart"></canvas>
+                            <p id="bar-empty-note" class="hidden absolute top-2 left-1/2 -translate-x-1/2 text-xs text-slate-400 bg-white/80 dark:bg-slate-900/80 px-2 py-0.5 rounded">ยังไม่มีคะแนนของคุณ แสดงเฉพาะค่าเฉลี่ยห้อง</p>
+                        </div>
                     </div>
                     <div class="print-clean lg:col-span-5 bg-white dark:bg-slate-900 rounded-2xl p-5 sm:p-6 border border-slate-200/80 dark:border-slate-800 shadow-sm">
                         <div class="mb-4">
@@ -383,7 +385,12 @@
                             </h4>
                             <p class="text-xs text-slate-500 dark:text-slate-400">การกระจายตัวของเกรดในแต่ละรายวิชา</p>
                         </div>
-                        <div class="relative h-64 w-full flex items-center justify-center"><canvas id="student-doughnut-chart"></canvas></div>
+                        <div class="relative h-64 w-full flex items-center justify-center"><canvas id="student-doughnut-chart"></canvas>
+                            <div id="doughnut-empty" class="hidden absolute inset-0 flex flex-col items-center justify-center text-center gap-2">
+                                <div class="w-24 h-24 rounded-full border-[14px] border-slate-200 dark:border-slate-700"></div>
+                                <p class="text-sm text-slate-400">ยังไม่มีคะแนน จึงยังไม่มีเกรดให้แสดง</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -790,7 +797,7 @@
             localStorage.setItem('theme', isDark ? 'dark' : 'light');
             syncThemeLabel();
             refreshIcons();
-            if (lastSearchedId && lastStudentRows.length) renderStudentCharts(lastStudentRows);
+            if (lastSearchedId && !document.getElementById("student-personal-dashboard").classList.contains("hidden")) renderStudentCharts(lastStudentRows);
         }
 
         function syncThemeLabel() {
@@ -1042,13 +1049,21 @@
             if (chartBar)      { chartBar.destroy();      chartBar = null; }
             if (chartDoughnut) { chartDoughnut.destroy(); chartDoughnut = null; }
 
+            // แกน X แสดงทุกวิชา: วิชาที่ยังไม่มีคะแนนจะไม่มีแท่ง แต่ยังเห็นค่าเฉลี่ยห้อง
+            const names = allSubjects.map(s => s.name);
+            rows.forEach(r => { if (!names.includes(r.subject)) names.push(r.subject); });
+            const mine = new Map(rows.map(r => [r.subject, Number(r.score)]));
+            const myScores = names.map(n => mine.has(n) ? mine.get(n) : null);
+            document.getElementById('bar-empty-note').classList.toggle('hidden', rows.length > 0 || !names.some(n => classStats.subjects[n]));
+            document.getElementById('doughnut-empty').classList.toggle('hidden', rows.length > 0);
+
             chartBar = new Chart(document.getElementById('student-bar-chart').getContext('2d'), {
                 type: 'bar',
                 data: {
-                    labels: rows.map(r => r.subject),
+                    labels: names,
                     datasets: [
-                        { label:'คะแนน', data: rows.map(r=>Number(r.score)), backgroundColor: rows.map(r=>evaluateGrade(r.score).hex), borderRadius: 8, maxBarThickness: 46, order: 2 },
-                        { type:'line', label:'ค่าเฉลี่ยห้อง', data: rows.map(r => classStats.subjects[r.subject]?.avg ?? null), borderColor: dark ? '#f5f1e6' : '#1e3d2f', backgroundColor: dark ? '#f5f1e6' : '#1e3d2f', borderDash:[6,4], borderWidth:2, pointRadius:4, tension:0.2, order: 1 }
+                        { label:'คะแนนของฉัน', data: myScores, backgroundColor: myScores.map(v => v === null ? 'transparent' : evaluateGrade(v).hex), borderRadius: 8, maxBarThickness: 46, order: 2 },
+                        { type:'line', label:'ค่าเฉลี่ยห้อง', data: names.map(n => classStats.subjects[n]?.avg ?? null), borderColor: dark ? '#f5f1e6' : '#1e3d2f', backgroundColor: dark ? '#f5f1e6' : '#1e3d2f', borderDash:[6,4], borderWidth:2, pointRadius:4, tension:0.2, order: 1 }
                     ]
                 },
                 options: {
