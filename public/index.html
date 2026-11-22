@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบจัดการและตรวจสอบผลการเรียน (Student Score Dashboard)</title>
+    <title>สมุดคะแนน · ระบบตรวจสอบผลการเรียน</title>
+
+    <!-- ตั้งค่าเว็บ (ชื่อเว็บ, ชื่อโรงเรียน, ช่วงรหัสนักเรียน) -->
+    <script src="/config.js"></script>
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -14,10 +17,10 @@
                 extend: {
                     fontFamily: { sans: ['Prompt', 'Inter', 'sans-serif'] },
                     colors: {
-                        // สีประจำระบบ: เขียวกระดานดำ + ทองชอล์ก (แทนสีม่วงเดิมทั้งหน้า)
-                        indigo: { 50:'#effaf4', 100:'#d8f2e3', 200:'#b3e4ca', 300:'#80cfa8', 400:'#4cb383', 500:'#2a9566', 600:'#1d7a52', 700:'#186244', 800:'#164e38', 900:'#13402f', 950:'#0a241a' },
-                        violet: { 600:'#c08a1e' },
-                        board:  { DEFAULT:'#1e3d2f', dark:'#152b21', frame:'#8a5a2b', chalk:'#f5f1e6', gold:'#f2c14e' }
+                        // สีประจำระบบ: น้ำเงินหมึกปากกา + แดงเส้นขอบสมุด (ธีมสมุดจด)
+                        indigo: { 50:'#eef3ff', 100:'#dbe5fe', 200:'#bfd1fd', 300:'#93b2fa', 400:'#5f8bf5', 500:'#3a68ee', 600:'#2450d6', 700:'#1f41ad', 800:'#1f3989', 900:'#1e326e', 950:'#141f44' },
+                        violet: { 600:'#e2557a' },
+                        paper:  { DEFAULT:'#fbf7ee', line:'#c9d8f5', margin:'#f08a8a', ink:'#1f3989', dark:'#161c2b' }
                     }
                 }
             }
@@ -50,23 +53,49 @@
 
     <style>
         body { font-family: 'Prompt', 'Inter', sans-serif; }
-        /* หัวข้อเป็นลายมือ ให้เหมือนเขียนบนกระดาน */
-        h1, h2, h3, h4, .font-chalk { font-family: 'Mali', 'Prompt', sans-serif; }
-        .chalkboard {
-            background-color: #1e3d2f;
+        /* หัวข้อเป็นลายมือ ให้เหมือนเขียนในสมุด */
+        h1, h2, h3, h4, .font-hand { font-family: 'Mali', 'Prompt', sans-serif; }
+        /* พื้นหลังทั้งหน้าเป็นกระดาษสีครีม */
+        body { background-color: #f6f1e4; }
+        .dark body { background-color: #0f1422; }
+
+        /* หน้าสมุด: เส้นบรรทัดสีฟ้า + เส้นขอบกระดาษสีแดง + รูสันห่วง */
+        .notebook-page {
+            position: relative;
+            background-color: #fffdf7;
             background-image:
-                radial-gradient(ellipse at 20% 15%, rgba(255,255,255,0.07), transparent 45%),
-                radial-gradient(ellipse at 85% 80%, rgba(255,255,255,0.05), transparent 40%),
-                repeating-linear-gradient(115deg, rgba(255,255,255,0.015) 0 2px, transparent 2px 7px);
-            border: 10px solid #8a5a2b;
-            box-shadow: inset 0 0 40px rgba(0,0,0,0.45), 0 10px 24px -12px rgba(0,0,0,0.5);
+                linear-gradient(90deg, transparent 58px, rgba(240,138,138,0.9) 58px, rgba(240,138,138,0.9) 60px, transparent 60px),
+                repeating-linear-gradient(180deg, transparent 0 33px, rgba(120,160,230,0.35) 33px 34px);
+            background-position: 0 0, 0 18px;
+            border: 1px solid #e9e1cc;
+            box-shadow: 0 1px 0 #fff, 6px 6px 0 -1px #f1ead8, 6px 6px 0 0 #e2d9c1, 0 18px 30px -18px rgba(80,60,20,0.35);
+            padding-left: 76px !important;
         }
-        .chalk-text { color: #f5f1e6; text-shadow: 0 0 1px rgba(245,241,230,0.6); }
-        .chalk-line { border-bottom: 2px dashed rgba(245,241,230,0.35); }
-        .chalk-input { background: transparent; border: 2px solid rgba(245,241,230,0.75); color: #f5f1e6; border-radius: 10px; }
-        .chalk-input::placeholder { color: rgba(245,241,230,0.45); }
-        .chalk-input:focus { outline: none; border-color: #f2c14e; box-shadow: 0 0 0 3px rgba(242,193,78,0.25); }
-        .chalk-tray { height: 10px; background: #6d4521; border-radius: 0 0 6px 6px; margin: 0 24px; box-shadow: 0 3px 0 #5a381b; }
+        .notebook-page::before {
+            content: ''; position: absolute; left: 20px; top: 24px; bottom: 24px; width: 18px;
+            background-image: radial-gradient(circle at 9px 9px, #e9e1cc 0 6px, #cfc4a8 6px 7px, transparent 7.5px);
+            background-size: 18px 46px; background-repeat: repeat-y;
+        }
+        .dark .notebook-page {
+            background-color: #1b2233;
+            background-image:
+                linear-gradient(90deg, transparent 58px, rgba(240,120,130,0.45) 58px, rgba(240,120,130,0.45) 60px, transparent 60px),
+                repeating-linear-gradient(180deg, transparent 0 33px, rgba(120,160,230,0.14) 33px 34px);
+            border-color: #2a3348;
+            box-shadow: 6px 6px 0 -1px #161c2b, 6px 6px 0 0 #2a3348, 0 18px 30px -18px rgba(0,0,0,0.6);
+        }
+        .dark .notebook-page::before { background-image: radial-gradient(circle at 9px 9px, #0f1422 0 6px, #2a3348 6px 7px, transparent 7.5px); }
+        .ink-text { color: #1f3989; }
+        .dark .ink-text { color: #dbe5fe; }
+        .ink-line { border-bottom: 2px dashed rgba(36,80,214,0.25); }
+        .ink-input { background: rgba(255,255,255,0.7); border: 2px solid #1f3989; color: #1f3989; border-radius: 10px; }
+        .dark .ink-input { background: rgba(15,20,34,0.6); border-color: #93b2fa; color: #dbe5fe; }
+        .ink-input::placeholder { color: rgba(31,57,137,0.35); }
+        .dark .ink-input::placeholder { color: rgba(219,229,254,0.35); }
+        .ink-input:focus { outline: none; border-color: #2450d6; box-shadow: 0 0 0 3px rgba(36,80,214,0.18); }
+        /* แถบไฮไลต์เหมือนปากกาเน้นข้อความ */
+        .highlight { background: linear-gradient(transparent 55%, rgba(255,226,92,0.75) 55%); padding: 0 4px; }
+        .dark .highlight { background: linear-gradient(transparent 60%, rgba(226,85,122,0.45) 60%); }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(8px); }
             to   { opacity: 1; transform: translateY(0); }
@@ -88,7 +117,7 @@
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors duration-200 antialiased selection:bg-indigo-500 selection:text-white">
+<body class="min-h-screen flex flex-col text-slate-800 dark:text-slate-100 transition-colors duration-200 antialiased selection:bg-indigo-500 selection:text-white">
 
     <!-- Toast Notification Container -->
     <div id="toast-container" class="no-print fixed top-4 right-4 z-50 flex flex-col gap-2.5 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
@@ -103,11 +132,11 @@
                 <div class="flex items-center justify-between">
                     <div class="flex items-center gap-3">
                         <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 text-white flex items-center justify-center shadow-md shadow-indigo-500/20 shrink-0">
-                            <i data-lucide="graduation-cap" class="w-5 h-5"></i>
+                            <i data-lucide="notebook-pen" class="w-5 h-5"></i>
                         </div>
                         <div>
-                            <h1 class="text-lg sm:text-xl font-bold text-slate-900 dark:text-white leading-tight">กระดานคะแนน</h1>
-                            <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">ระบบตรวจสอบผลการเรียน · รหัส 68319030001–020</p>
+                            <h1 data-cfg="siteName" class="text-lg sm:text-xl font-bold text-slate-900 dark:text-white leading-tight">สมุดคะแนน</h1>
+                            <p data-cfg="schoolName" class="text-xs text-slate-500 dark:text-slate-400 font-medium">ระบบตรวจสอบผลการเรียน</p>
                         </div>
                     </div>
                     <!-- Mobile Theme Toggle -->
@@ -161,33 +190,32 @@
         <!-- ========================================================= -->
         <section id="view-student" class="animate-fade-in space-y-6">
 
-            <!-- Search Hero: กระดานดำ เหมือนภาพร่างบนกระดานในห้องเรียน -->
+            <!-- Search Hero: หน้าสมุดจดมีเส้นบรรทัด -->
             <div class="no-print max-w-4xl mx-auto">
-                <div class="chalkboard rounded-2xl p-6 sm:p-10">
-                    <p class="font-chalk chalk-text text-sm opacity-80 text-center">กระดานคะแนน</p>
-                    <h2 class="chalk-text text-2xl sm:text-3xl font-bold text-center mt-1">ดูคะแนนของฉัน</h2>
+                <div class="notebook-page rounded-2xl p-6 sm:p-10">
+                    <p data-cfg="siteName" class="font-hand ink-text text-sm opacity-70 text-center">สมุดคะแนน</p>
+                    <h2 class="ink-text text-2xl sm:text-3xl font-bold text-center mt-1"><span class="highlight">ดูคะแนนของฉัน</span></h2>
 
                     <form id="student-search-form" onsubmit="handleStudentSearch(event)" class="mt-6 flex flex-col sm:flex-row sm:items-center gap-3 max-w-2xl mx-auto">
-                        <label for="search-student-id" class="font-chalk chalk-text text-2xl sm:text-3xl font-bold shrink-0 text-center">ID STD</label>
-                        <input type="text" id="search-student-id" placeholder="683190300xx" required inputmode="numeric" maxlength="11" autocomplete="off"
-                            class="chalk-input font-chalk flex-1 min-w-0 px-4 py-3 text-xl sm:text-2xl tracking-widest text-center">
+                        <label for="search-student-id" class="font-hand ink-text text-2xl sm:text-3xl font-bold shrink-0 text-center">ID STD</label>
+                        <input type="text" id="search-student-id" placeholder="รหัสนักเรียน" required inputmode="numeric" maxlength="20" autocomplete="off"
+                            class="ink-input font-hand flex-1 min-w-0 px-4 py-3 text-xl sm:text-2xl tracking-widest text-center">
                         <button type="submit"
-                            class="px-6 py-3 rounded-xl bg-board-gold hover:brightness-105 active:scale-[0.98] text-board-dark font-bold shadow-md transition flex items-center justify-center gap-2 cursor-pointer shrink-0">
+                            class="px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white font-bold shadow-md shadow-indigo-500/20 transition flex items-center justify-center gap-2 cursor-pointer shrink-0">
                             <i data-lucide="search" class="w-4 h-4"></i>
                             <span>ดูคะแนน</span>
                         </button>
                     </form>
 
-                    <div class="mt-6 pt-4 chalk-line"></div>
+                    <div class="mt-6 pt-4 ink-line"></div>
                     <div class="mt-4 flex flex-wrap items-center justify-center gap-2">
-                        <label for="quick-student-select" class="font-chalk chalk-text text-sm opacity-90">หรือเลือกรหัส:</label>
+                        <label for="quick-student-select" class="font-hand ink-text text-sm opacity-90">หรือเลือกรหัส:</label>
                         <select id="quick-student-select" onchange="if(this.value) quickSearchStudent(this.value)"
-                            class="chalk-input font-chalk px-3 py-1.5 text-sm cursor-pointer [&>option]:text-slate-900">
-                            <option value="">68319030001 – 68319030020</option>
+                            class="ink-input font-hand px-3 py-1.5 text-sm cursor-pointer [&>option]:text-slate-900">
+                            <option value="" data-cfg="idRange">เลือกรหัสนักเรียน</option>
                         </select>
                     </div>
                 </div>
-                <div class="chalk-tray"></div>
             </div>
 
             <!-- Welcome Info Cards (before search) -->
@@ -267,7 +295,7 @@
                     <i data-lucide="user-x" class="w-7 h-7"></i>
                 </div>
                 <h3 class="text-lg font-bold text-slate-900 dark:text-white">ไม่พบข้อมูลรหัสนักเรียน "<span id="not-found-id-text" class="text-rose-600 dark:text-rose-400"></span>"</h3>
-                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">รหัสนักเรียนต้องอยู่ระหว่าง 68319030001 - 68319030020</p>
+                <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">รหัสนักเรียนต้องอยู่ระหว่าง <span data-cfg="idRange"></span></p>
                 <button type="button" onclick="clearStudentSearch()"
                     class="mt-5 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-sm font-medium transition cursor-pointer">
                     <i data-lucide="rotate-ccw" class="w-4 h-4"></i> กลับสู่หน้าหลัก
@@ -705,8 +733,8 @@
     <!-- Footer -->
     <footer class="no-print bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-4 mt-10 transition-colors">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-400">
-            <p class="font-chalk">© 2026 กระดานคะแนน · ระบบตรวจสอบผลการเรียน</p>
-            <p>รหัสนักเรียน 68319030001 - 68319030020 · Vercel + Supabase</p>
+            <p class="font-hand">© <span data-cfg="year">2026</span> <span data-cfg="siteName">สมุดคะแนน</span> · <span data-cfg="schoolName"></span></p>
+            <p>รหัสนักเรียน <span data-cfg="idRange"></span> · Vercel + Supabase</p>
         </div>
     </footer>
 
@@ -762,13 +790,43 @@
         let allSubjects = [];
         let classStats = { subjects: {}, rank: null, ranked: 0 };
 
-        // รหัสนักเรียนที่ใช้ได้: 68319030001 - 68319030020
-        const STUDENT_IDS = Array.from({ length: 20 }, (_, i) => String(68319030001 + i));
+        // ตั้งค่าจาก public/config.js (ชื่อเว็บ, ชื่อโรงเรียน, ช่วงรหัสนักเรียน)
+        const APP_CONFIG = Object.assign(
+            { siteName: 'สมุดคะแนน', schoolName: '', firstStudentId: '68319030001', studentCount: 20 },
+            window.APP_CONFIG || {}
+        );
+        const STUDENT_IDS = (() => {
+            const first = String(APP_CONFIG.firstStudentId);
+            const start = BigInt(first);
+            return Array.from({ length: Number(APP_CONFIG.studentCount) },
+                (_, i) => (start + BigInt(i)).toString().padStart(first.length, '0'));
+        })();
+        const ID_RANGE_TEXT = `${STUDENT_IDS[0]} – ${STUDENT_IDS[STUDENT_IDS.length - 1]}`;
+
+        function applyConfigText() {
+            const values = {
+                siteName: APP_CONFIG.siteName,
+                schoolName: APP_CONFIG.schoolName || 'ระบบตรวจสอบผลการเรียน',
+                idRange: ID_RANGE_TEXT,
+                year: String(new Date().getFullYear()),
+            };
+            document.querySelectorAll('[data-cfg]').forEach(el => {
+                const v = values[el.dataset.cfg];
+                if (v !== undefined) el.textContent = v;
+            });
+            document.title = `${APP_CONFIG.siteName} · ${values.schoolName}`;
+            const input = document.getElementById('search-student-id');
+            if (input) {
+                input.maxLength = STUDENT_IDS[0].length;
+                input.placeholder = STUDENT_IDS[0].slice(0, -2) + 'xx';
+            }
+        }
 
         // ==========================================
         // INIT
         // ==========================================
         window.addEventListener('DOMContentLoaded', () => {
+            applyConfigText();
             syncThemeLabel();
             refreshIcons();
             checkConnection();
